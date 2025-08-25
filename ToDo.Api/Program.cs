@@ -44,7 +44,7 @@ app.MapGet("/todoitems", async (TodoDb db) =>
     await db.Todos.ToListAsync());
 
 app.MapGet("/todoitems/complete", async (TodoDb db) =>
-    await db.Todos.Where(t => t.IsComplete).ToListAsync());
+    await db.Todos.Where(t => t.IsComplete == true).ToListAsync());
 
 app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
     await db.Todos.FindAsync(id)
@@ -68,6 +68,9 @@ app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
 
     todo.Name = inputTodo.Name;
     todo.IsComplete = inputTodo.IsComplete;
+    todo.Description = inputTodo.Description;
+    todo.DueDate = inputTodo.DueDate;
+    todo.Priority = inputTodo.Priority;
 
     await db.SaveChangesAsync();
 
