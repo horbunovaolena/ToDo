@@ -1,182 +1,287 @@
-# ToDo Application (ASP.NET Core .NET 9 with Web UI)
+# ToDo Application (ASP.NET Core .NET 9 with Enhanced Web UI)
 
-A complete ToDo application featuring an ASP.NET Core .NET 9 Minimal API backend with a modern web frontend. The application manages a to-do list using an in-memory database (Entity Framework Core InMemory provider) and provides both API endpoints and a user-friendly web interface.
+A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API backend with a feature-rich modern web frontend. The application manages tasks with detailed information including priorities, due dates, tags, and descriptions using an in-memory database (Entity Framework Core InMemory provider).
 
-## Features
-- .NET 9 Minimal API backend (no controllers)
-- **Modern Web UI** with HTML, CSS, and JavaScript
-- Entity Framework Core InMemory database (volatile – resets on each run)
-- Full CRUD operations for Todo items
-- **Interactive Frontend Features:**
-  - Add, edit, delete, and toggle completion of tasks
-  - Filter tasks by status (All, Active, Completed)
+## ? Features
+
+### **?? Backend (.NET 9 Minimal API)**
+- .NET 9 Minimal API backend with no controllers
+- Entity Framework Core InMemory database with JSON serialization for complex types
+- Full CRUD operations for Todo items with extended properties
+- Swagger / OpenAPI documentation in Development mode
+- CORS enabled for seamless frontend-backend communication
+- Advanced tag management with extension methods
+- Priority-based task organization
+
+### **?? Frontend (Modern Web UI)**
+- **Rich Task Management:**
+  - Create tasks with name, description, priority, due date, and tags
+  - Toggle task completion with visual feedback
+  - Inline editing (double-click task names)
+  - Full-featured edit modal with all properties
+  - Bulk operations (clear all completed tasks)
+
+- **Advanced Filtering & Views:**
+  - All tasks view
+  - Active (incomplete) tasks
+  - Completed tasks
+  - High priority tasks
+  - Overdue tasks with visual indicators
+
+- **Visual Enhancements:**
+  - Priority indicators with color coding (High: Red, Medium: Yellow, Low: Green)
+  - Due date display with overdue highlighting
+  - Tag system with styled badges
+  - Creation timestamps
+  - Responsive design for all screen sizes
+
+- **User Experience:**
   - Real-time task counter
-  - Clear all completed tasks
-  - Responsive design for desktop and mobile
-  - Double-click to edit tasks inline
-- Swagger / OpenAPI documentation in Development
-- CORS enabled for frontend-backend communication
+  - Loading states and error handling
+  - Smooth animations and transitions
+  - Modal dialogs for detailed editing
+  - Quick add functionality
+  - Keyboard shortcuts (Enter to add, Escape to cancel)
 
-## Tech Stack
-**Backend:**
+## ??? Tech Stack
+
+### **Backend:**
 - ASP.NET Core .NET 9
-- EF Core (InMemory)
-- Swagger / Swashbuckle
+- Entity Framework Core (InMemory) with custom JSON converters
+- Swagger / Swashbuckle for API documentation
+- Extension methods for clean code organization
 
-**Frontend:**
-- HTML5
-- CSS3 (with modern styling and responsive design)
-- Vanilla JavaScript (ES6+)
+### **Frontend:**
+- HTML5 with semantic markup
+- CSS3 with modern features (Grid, Flexbox, Custom Properties)
+- Vanilla JavaScript (ES6+) with async/await
 - Fetch API for HTTP requests
+- No external dependencies for optimal performance
 
-## Project Structure
+## ?? Project Structure
 ```
 /ToDo.Api
-  Program.cs           -> API endpoint definitions & app bootstrap
-  Todo.cs              -> Todo entity/model
-  TodoDb.cs            -> EF Core DbContext
-  /wwwroot             -> Static web files
-    index.html         -> Main UI page
-    styles.css         -> Modern CSS styling
-    script.js          -> Frontend JavaScript logic
+  Program.cs           -> API endpoints & application bootstrap
+  Todo.cs              -> Enhanced Todo entity with all properties
+  Priority.cs          -> Priority enumeration (Low, Medium, High)
+  TagHelper.cs         -> Extension methods for tag management
+  TodoDb.cs            -> EF Core DbContext with JSON configuration
+  /wwwroot             -> Static web assets
+    index.html         -> Main UI with advanced features
+    styles.css         -> Comprehensive styling with responsive design
+    script.js          -> Feature-rich JavaScript application
 ```
 
-## Prerequisites
+## ?? Getting Started
+
+### **Prerequisites**
 - .NET 9 SDK installed
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- (Optional) An HTTP client tool for API testing: curl, HTTPie, Postman, VS Code REST, etc.
+- Modern web browser (Chrome 60+, Firefox 55+, Safari 12+, Edge 79+)
+- (Optional) API testing tools: curl, Postman, etc.
 
-## Getting Started
-
-### Running the Application
+### **Running the Application**
 ```bash
 dotnet run --project ToDo.Api/ToDo.Api.csproj
 ```
 
-The app will listen on the dynamic Kestrel ports printed to console (typically https://localhost:7xxx).
+The application will start on dynamic Kestrel ports (typically `https://localhost:7xxx`).
 
-### Accessing the Application
-1. **Web UI**: Open your browser and navigate to `https://localhost:<port>/` to use the interactive todo interface
-2. **API Documentation**: Browse Swagger UI at `https://localhost:<port>/swagger` (Development mode)
-3. **Direct API Access**: Use the API endpoints directly for integration or testing
+### **Accessing the Application**
+1. **?? Web Interface**: Navigate to `https://localhost:<port>/`
+2. **?? API Documentation**: Visit `https://localhost:<port>/swagger`
+3. **?? Direct API Access**: Use endpoints programmatically
 
-## Web UI Usage
+## ?? Web UI Guide
 
-### Adding Tasks
-- Type your task in the input field
-- Press Enter or click "Add Task"
+### **Adding Tasks**
+- **Quick Add**: Type in the main input and press Enter
+- **Detailed Add**: Use the "Quick Add with Details" section for full properties
+- **Required**: Only task name is required, all other fields are optional
 
-### Managing Tasks
-- **Mark Complete**: Click the checkbox next to any task
-- **Edit Task**: Double-click on the task text or click the "Edit" button
-- **Delete Task**: Click the "Delete" button (confirmation required)
+### **Managing Tasks**
+- **? Complete**: Click checkbox to mark as done
+- **?? Edit**: Click "Edit" button for full modal or double-click name for quick edit
+- **??? Delete**: Click "Delete" button (with confirmation)
+- **?? Filter**: Use filter buttons to view specific task subsets
 
-### Filtering Tasks
-- **All**: View all tasks
-- **Active**: View only incomplete tasks
-- **Completed**: View only completed tasks
+### **Task Properties**
+- **?? Name**: Task title (required)
+- **?? Description**: Optional detailed description
+- **? Priority**: Low (Green) / Medium (Yellow) / High (Red)
+- **?? Due Date**: Optional deadline with overdue detection
+- **??? Tags**: Comma-separated labels for organization
+- **?? Created**: Automatic timestamp tracking
 
-### Additional Features
-- **Task Counter**: Shows remaining active tasks
-- **Clear Completed**: Remove all completed tasks at once
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+### **Advanced Features**
+- **?? Smart Filtering**: View tasks by status, priority, or deadline
+- **?? Statistics**: Real-time count of remaining tasks
+- **?? Bulk Actions**: Clear all completed tasks at once
+- **?? Mobile Ready**: Fully responsive across all devices
 
-## API Endpoints Summary
-Base path: (root)
+## ?? API Endpoints
 
-| Method | Route                  | Description                          | Body (JSON)                     |
-|--------|------------------------|--------------------------------------|---------------------------------|
-| GET    | /todoitems             | Get all todo items                   | –                               |
-| GET    | /todoitems/complete    | Get only completed items             | –                               |
-| GET    | /todoitems/{id}        | Get single item by id                | –                               |
-| POST   | /todoitems             | Create new item                      | { "name": string, "isComplete": bool } |
-| PUT    | /todoitems/{id}        | Update existing item (full replace)  | { "id": int, "name": string, "isComplete": bool } |
-| DELETE | /todoitems/{id}        | Delete item                          | –                               |
+### **Core Todo Operations**
+| Method | Endpoint | Description | Request Body |
+|--------|----------|-------------|--------------|
+| `GET` | `/todoitems` | Get all todos | - |
+| `GET` | `/todoitems/{id}` | Get specific todo | - |
+| `GET` | `/todoitems/complete` | Get completed todos | - |
+| `POST` | `/todoitems` | Create new todo | Todo object |
+| `PUT` | `/todoitems/{id}` | Update existing todo | Complete Todo object |
+| `DELETE` | `/todoitems/{id}` | Delete todo | - |
 
-Notes:
-- Id is server-assigned on POST; you may omit it or set 0.
-- PUT requires the resource to exist; otherwise 404 is returned.
-- CORS is enabled to allow frontend-backend communication.
+### **Tag Management**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/tags` | Get all unique tags |
+| `GET` | `/todoitems/tag/{tag}` | Get todos by specific tag |
 
-## Example API Requests (curl)
-Create:
+### **Enhanced Todo Object**
+```json
+{
+  "id": 1,
+  "name": "Complete project documentation",
+  "description": "Write comprehensive README and API docs",
+  "isComplete": false,
+  "priority": 3,
+  "dueDate": "2024-01-31",
+  "tags": ["work", "documentation", "important"],
+  "createdDate": "2024-01-15T10:30:00.123Z"
+}
+```
+
+### **Priority Values**
+- `1`: Low Priority (Green indicator)
+- `2`: Medium Priority (Yellow indicator) - Default
+- `3`: High Priority (Red indicator)
+
+## ??? Development Notes
+
+### **Database Configuration**
+- **Storage**: InMemory provider for development simplicity
+- **Persistence**: Data resets on application restart
+- **JSON Serialization**: Complex types (tags) stored as JSON
+- **Production**: Consider SQLite/SQL Server for persistence
+
+### **Frontend Architecture**
+- **Modular Design**: Separation of concerns across files
+- **Error Handling**: Comprehensive error states and user feedback
+- **Performance**: Optimized rendering and minimal DOM manipulation
+- **Accessibility**: Semantic HTML and keyboard navigation
+
+### **Extension Methods**
+Custom tag management with extension methods:
+```csharp
+todo.AddTag("important");        // Add normalized tag
+todo.RemoveTag("old-tag");       // Remove tag
+bool hasTag = todo.HasTag("work"); // Check tag existence
+```
+
+## ?? Example Usage
+
+### **Creating a Detailed Task**
 ```bash
-curl -s -X POST https://localhost:7000/todoitems \
+curl -X POST https://localhost:7000/todoitems \
   -H "Content-Type: application/json" \
-  -d '{"name":"Learn minimal APIs","isComplete":false}'
+  -d '{
+    "name": "Prepare presentation",
+    "description": "Create slides for quarterly review",
+    "priority": 3,
+    "dueDate": "2024-02-15",
+    "tags": ["work", "presentation", "urgent"]
+  }'
 ```
-List:
+
+### **Filtering by Priority**
 ```bash
-curl -s https://localhost:7000/todoitems | jq
+# Get all todos, then filter high priority on frontend
+curl https://localhost:7000/todoitems
 ```
-Update:
+
+### **Tag-based Search**
 ```bash
-curl -s -X PUT https://localhost:7000/todoitems/1 \
-  -H "Content-Type: application/json" \
-  -d '{"id":1,"name":"Learn minimal APIs","isComplete":true}'
+# Get all todos tagged with "work"
+curl https://localhost:7000/todoitems/tag/work
 ```
-Delete:
-```bash
-curl -X DELETE https://localhost:7000/todoitems/1 -i
+
+## ?? Configuration & Customization
+
+### **Environment Settings**
+- **Development**: Full Swagger UI and detailed error messages
+- **Production**: Minimal error exposure, consider authentication
+
+### **CORS Policy**
+Currently configured for development with `AllowAnyOrigin`. Restrict for production:
+```csharp
+policy.WithOrigins("https://yourdomain.com")
 ```
-Adjust the port to match what dotnet run outputs.
 
-## Development Notes
-- **Database**: InMemory provider is used, so data is not persisted across restarts. For persistence, swap to a real provider (e.g., SQLite or SQL Server) and update Program.cs service registration.
-- **Environment**: Swagger is enabled only in Development (default when running locally). Set ASPNETCORE_ENVIRONMENT=Development to ensure UI availability.
-- **Static Files**: The web UI is served from the wwwroot folder using ASP.NET Core's static file middleware.
-- **CORS**: Configured to allow all origins for development. Restrict this for production use.
+## ?? Possible Enhancements
 
-## Frontend Architecture
-The frontend follows modern web development practices:
-- **Separation of Concerns**: HTML for structure, CSS for styling, JavaScript for behavior
-- **Responsive Design**: Mobile-first approach with flexible layouts
-- **Error Handling**: User-friendly error messages and loading states
-- **Accessibility**: Semantic HTML and keyboard navigation support
-- **Performance**: Minimal dependencies, optimized for fast loading
+### **Backend Improvements**
+- [ ] Add input validation with FluentValidation
+- [ ] Implement DTOs for API contracts
+- [ ] Add authentication/authorization (JWT/Identity)
+- [ ] Implement rate limiting
+- [ ] Add caching strategies
+- [ ] Database persistence (SQLite/PostgreSQL)
+- [ ] Real-time updates with SignalR
 
-## Possible Improvements
-**Backend:**
-- Add validation (e.g., reject empty names)
-- Introduce DTOs to decouple persistence model
-- Add filtering / paging to API endpoints
-- Persist with SQLite for local development
-- Add authentication / authorization
-- Implement rate limiting
+### **Frontend Enhancements**
+- [ ] Drag-and-drop task reordering
+- [ ] Local storage for offline capability
+- [ ] Dark/light theme toggle
+- [ ] Progressive Web App (PWA) features
+- [ ] Advanced search and filtering
+- [ ] Task categories and projects
+- [ ] Recurring task support
+- [ ] Time tracking integration
 
-**Frontend:**
-- Add drag-and-drop reordering
-- Implement local storage backup
-- Add task categories/tags
-- Include due dates and priorities
-- Add dark mode toggle
-- Implement Progressive Web App (PWA) features
+### **DevOps & Testing**
+- [ ] Unit and integration tests
+- [ ] Docker containerization
+- [ ] CI/CD pipeline setup
+- [ ] Performance monitoring
+- [ ] Automated UI testing
 
-**General:**
-- Add unit/integration tests
-- Set up CI/CD pipeline
-- Add Docker containerization
-- Implement real-time updates with SignalR
+## ?? Testing
 
-## Running Tests
-(No tests yet) – You can add a test project with:
+### **Setup Test Project**
 ```bash
 dotnet new xunit -n ToDo.Api.Tests
+dotnet add ToDo.Api.Tests reference ToDo.Api
 ```
-Reference the API project and write tests against the endpoints using WebApplicationFactory.
 
-## Browser Compatibility
-The frontend is compatible with:
-- Chrome 60+
-- Firefox 55+
-- Safari 12+
-- Edge 79+
+### **Recommended Test Coverage**
+- API endpoint functionality
+- Business logic validation
+- Frontend user interactions
+- Database operations
+- Error handling scenarios
 
-## License
-Licensed under the Apache License, Version 2.0. See LICENSE for details.
+## ?? Browser Support
+- **Chrome**: 60+ ?
+- **Firefox**: 55+ ?
+- **Safari**: 12+ ?
+- **Edge**: 79+ ?
+- **Mobile**: iOS Safari, Chrome Mobile ?
 
-## Contributing
-Issues & PRs welcome. Please keep changes small & focused.
+## ?? License
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
-## Contact
-Created as a full-stack ToDo application sample. Adapt freely for your needs.
+## ?? Contributing
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make focused, well-tested changes
+4. Submit a pull request with clear description
+
+## ??? Tags
+`asp-net-core` `dotnet-9` `minimal-api` `javascript` `todo-app` `entity-framework` `responsive-design` `modern-ui`
+
+## ?? Contact
+Created as a comprehensive ToDo application demonstrating modern full-stack development practices with .NET 9 and vanilla JavaScript. Feel free to adapt and extend for your needs!
+
+---
+
+**? Star this repository if you find it helpful!**

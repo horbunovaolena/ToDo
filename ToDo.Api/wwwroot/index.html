@@ -21,6 +21,8 @@
             <button class="filter-btn active" onclick="showAllTodos()">All</button>
             <button class="filter-btn" onclick="showActiveTodos()">Active</button>
             <button class="filter-btn" onclick="showCompletedTodos()">Completed</button>
+            <button class="filter-btn" onclick="showHighPriorityTodos()">High Priority</button>
+            <button class="filter-btn" onclick="showOverdueTodos()">Overdue</button>
         </div>
         
         <div class="todo-list">
@@ -33,8 +35,88 @@
             <span id="todoCount">0 tasks remaining</span>
             <button id="clearCompleted" onclick="clearCompleted()">Clear Completed</button>
         </div>
+        
+        <!-- Quick Add Section -->
+        <div class="quick-add-section">
+            <details>
+                <summary>Quick Add with Details</summary>
+                <form id="quickAddForm" onsubmit="addDetailedTodo(event)">
+                    <div class="form-row">
+                        <input type="text" id="quickName" placeholder="Task name..." required>
+                        <select id="quickPriority">
+                            <option value="1">Low</option>
+                            <option value="2" selected>Medium</option>
+                            <option value="3">High</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="quickDescription" placeholder="Description (optional)">
+                        <input type="date" id="quickDueDate">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="quickTags" placeholder="Tags (comma-separated)">
+                        <button type="submit">Add Detailed Task</button>
+                    </div>
+                </form>
+            </details>
+        </div>
     </div>
     
     <script src="script.js"></script>
+    
+    <script>
+        // Add detailed todo function
+        async function addDetailedTodo(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('quickName').value.trim();
+            if (!name) {
+                alert('Task name is required!');
+                return;
+            }
+            
+            const description = document.getElementById('quickDescription').value.trim();
+            const priority = parseInt(document.getElementById('quickPriority').value);
+            const dueDate = document.getElementById('quickDueDate').value || null;
+            const tagsText = document.getElementById('quickTags').value.trim();
+            const tags = tagsText ? tagsText.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+            
+            try {
+                const newTodo = {
+                    name,
+                    description,
+                    isComplete: false,
+                    priority,
+                    dueDate,
+                    tags
+                };
+
+                const response = await fetch('/todoitems', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newTodo)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add todo');
+                }
+
+                const createdTodo = await response.json();
+                todos.push(createdTodo);
+                
+                // Reset form
+                document.getElementById('quickAddForm').reset();
+                document.getElementById('quickPriority').value = '2'; // Reset to Medium
+                
+                renderTodos();
+                updateStats();
+                loadTags();
+            } catch (error) {
+                showError('Failed to add todo: ' + error.message);
+            }
+        }
+    </script>
 </body>
 </html>
