@@ -40,6 +40,27 @@ if (app.Environment.IsDevelopment())
 // Serve index.html as default page
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
+// Get all unique tags
+app.MapGet("/tags", async (TodoDb db) =>
+{
+    var allTags = await db.Todos
+        .SelectMany(t => t.Tags)
+        .Distinct()
+        .OrderBy(tag => tag)
+        .ToListAsync();
+    return Results.Ok(allTags);
+});
+
+// Get todos by tag
+app.MapGet("/todoitems/tag/{tag}", async (string tag, TodoDb db) =>
+{
+    var normalizedTag = tag.Trim().ToLowerInvariant();
+    var todos = await db.Todos
+        .Where(t => t.Tags.Contains(normalizedTag))
+        .ToListAsync();
+    return Results.Ok(todos);
+});
+
 app.MapGet("/todoitems", async (TodoDb db) =>
     await db.Todos.ToListAsync());
 
@@ -71,6 +92,7 @@ app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
     todo.Description = inputTodo.Description;
     todo.DueDate = inputTodo.DueDate;
     todo.Priority = inputTodo.Priority;
+    todo.Tags = inputTodo.Tags;
 
     await db.SaveChangesAsync();
 
