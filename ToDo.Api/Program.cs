@@ -43,11 +43,12 @@ app.MapGet("/", () => Results.Redirect("/index.html"));
 // Get all unique tags
 app.MapGet("/tags", async (TodoDb db) =>
 {
-    var allTags = await db.Todos
-        .SelectMany(t => t.Tags)
+    var todos = await db.Todos.ToListAsync();
+    var allTags = todos
+        .SelectMany(t => t.Tags ?? new List<string>())
         .Distinct()
         .OrderBy(tag => tag)
-        .ToListAsync();
+        .ToList();
     return Results.Ok(allTags);
 });
 
@@ -55,17 +56,21 @@ app.MapGet("/tags", async (TodoDb db) =>
 app.MapGet("/todoitems/tag/{tag}", async (string tag, TodoDb db) =>
 {
     var normalizedTag = tag.Trim().ToLowerInvariant();
-    var todos = await db.Todos
-        .Where(t => t.Tags.Contains(normalizedTag))
-        .ToListAsync();
-    return Results.Ok(todos);
+    var todos = await db.Todos.ToListAsync();
+    var filteredTodos = todos
+        .Where(t => t.Tags != null && t.Tags.Any(todoTag => todoTag.Equals(normalizedTag, StringComparison.OrdinalIgnoreCase)))
+        .ToList();
+    return Results.Ok(filteredTodos);
 });
 
 app.MapGet("/todoitems", async (TodoDb db) =>
     await db.Todos.ToListAsync());
 
 app.MapGet("/todoitems/complete", async (TodoDb db) =>
-    await db.Todos.Where(t => t.IsComplete == true).ToListAsync());
+{
+    var completedTodos = await db.Todos.Where(t => t.IsComplete).ToListAsync();
+    return Results.Ok(completedTodos);
+});
 
 app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
     await db.Todos.FindAsync(id)
