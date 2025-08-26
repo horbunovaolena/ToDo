@@ -11,13 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "iac", "iac", "{599635AB-B99E-4B10-9E8D-C4FAE83C1121}"
-	ProjectSection(SolutionItems) = preProject
-		iac\main.tf = iac\main.tf
-		iac\provider.tf = iac\provider.tf
-		iac\terraform.tf = iac\terraform.tf
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
