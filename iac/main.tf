@@ -46,8 +46,8 @@ resource "azurerm_windows_web_app" "to_do_web_app" {
   site_config {
     always_on                         = false
     ftps_state                        = "FtpsOnly"
-    ip_restriction_default_action     = ""
-    scm_ip_restriction_default_action = ""
+    ip_restriction_default_action     = "Allow"
+    scm_ip_restriction_default_action = "Allow"
   }
 }
 resource "azurerm_app_service_custom_hostname_binding" "to_do_identity1" {
