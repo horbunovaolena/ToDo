@@ -5,6 +5,7 @@ using Pulumi.AzureNative.Storage.Inputs;
 using Pulumi.AzureNative.Web;
 using Pulumi.AzureNative.Web.Inputs;
 using System.Collections.Generic;
+using WebManagedServiceIdentityArgs = Pulumi.AzureNative.Web.Inputs.ManagedServiceIdentityArgs;
 
 return await Pulumi.Deployment.RunAsync(() =>
 {
@@ -12,7 +13,6 @@ return await Pulumi.Deployment.RunAsync(() =>
     var resourceGroup = new ResourceGroup("ToDoHel", new ResourceGroupArgs
     {
         ResourceGroupName = "ToDoHel",
-        Location = "East US"
     });
 
     // Create an App Service Plan for Windows
@@ -46,7 +46,7 @@ return await Pulumi.Deployment.RunAsync(() =>
                 new IpSecurityRestrictionArgs
                 {
                     IpAddress = "Any",
-                    Action = "Deny"
+                    Action = "Allow"
                 }
             },
             ScmIpSecurityRestrictions = new[]
@@ -54,23 +54,23 @@ return await Pulumi.Deployment.RunAsync(() =>
                 new IpSecurityRestrictionArgs
                 {
                     IpAddress = "Any",
-                    Action = "Deny"
+                    Action = "Allow"
                 }
             },
-            IpSecurityRestrictionsDefaultAction = "Deny",
-            ScmIpSecurityRestrictionsDefaultAction = "Deny"
+            IpSecurityRestrictionsDefaultAction = "Allow",
+            ScmIpSecurityRestrictionsDefaultAction = "Allow"
         },
-        Identity = new ManagedServiceIdentityArgs
+        Identity = new WebManagedServiceIdentityArgs
         {
             Type = Pulumi.AzureNative.Web.ManagedServiceIdentityType.SystemAssigned
         }
     });
 
-    // Export the Web App URL
+    // Export the resource information
     return new Dictionary<string, object?>
     {
         ["resourceGroupName"] = resourceGroup.Name,
         ["webAppName"] = webApp.Name,
-        ["webAppUrl"] = webApp.DefaultHostName.Apply(hostname => $"https://{hostname}")
+        ["webAppUrl"] = webApp.DefaultHostName.Apply(hostname => $"https://{hostname}"),
     };
 });
