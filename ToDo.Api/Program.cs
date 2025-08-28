@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using ToDo.Api;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+// Change from InMemory to SQLite
+builder.Services.AddDbContext<TodoDb>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Swagger services
