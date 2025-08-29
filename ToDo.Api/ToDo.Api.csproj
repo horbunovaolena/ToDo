@@ -19,7 +19,7 @@
   </ItemGroup>
 	<ItemGroup>
 		<None Update="todos.db">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 </Project>
