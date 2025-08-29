@@ -4,7 +4,7 @@ A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API ba
 
 ## ? Features
 
-### **?? Backend (.NET 9 Minimal API)**
+### ** Backend (.NET 9 Minimal API)**
 - .NET 9 Minimal API backend with no controllers
 - Entity Framework Core InMemory database with JSON serialization for complex types
 - Full CRUD operations for Todo items with extended properties
@@ -13,7 +13,7 @@ A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API ba
 - Advanced tag management with extension methods
 - Priority-based task organization
 
-### **?? Frontend (Modern Web UI)**
+### ** Frontend (Modern Web UI)**
 - **Rich Task Management:**
   - Create tasks with name, description, priority, due date, and tags
   - Toggle task completion with visual feedback
@@ -43,7 +43,7 @@ A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API ba
   - Quick add functionality
   - Keyboard shortcuts (Enter to add, Escape to cancel)
 
-## ??? Tech Stack
+## Tech Stack
 
 ### **Backend:**
 - ASP.NET Core .NET 9
@@ -58,7 +58,7 @@ A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API ba
 - Fetch API for HTTP requests
 - No external dependencies for optimal performance
 
-## ?? Project Structure
+## Project Structure
 ```
 /ToDo.Api
   Program.cs           -> API endpoints & application bootstrap
@@ -72,7 +72,7 @@ A comprehensive ToDo application featuring an ASP.NET Core .NET 9 Minimal API ba
     script.js          -> Feature-rich JavaScript application
 ```
 
-## ?? Getting Started
+## Getting Started
 
 ### **Prerequisites**
 - .NET 9 SDK installed
