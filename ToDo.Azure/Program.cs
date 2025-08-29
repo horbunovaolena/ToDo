@@ -1,9 +1,7 @@
-﻿using Pulumi;
-using Pulumi.AzureNative.Resources;
-using Pulumi.AzureNative.Storage;
-using Pulumi.AzureNative.Storage.Inputs;
+﻿using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.Web;
 using Pulumi.AzureNative.Web.Inputs;
+using Pulumi.AzureNative.Authorization;
 using System.Collections.Generic;
 using WebManagedServiceIdentityArgs = Pulumi.AzureNative.Web.Inputs.ManagedServiceIdentityArgs;
 
@@ -67,11 +65,21 @@ return await Pulumi.Deployment.RunAsync(() =>
         }
     });
 
+    // Create role assignment for user with Contributor role
+    var roleAssignment = new RoleAssignment("contributorRoleAssignment", new RoleAssignmentArgs
+    {
+        Scope = resourceGroup.Id,
+        RoleDefinitionId = "/subscriptions/{subscription-id}/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c", // Contributor role
+        PrincipalId = "076a7472-bbea-4281-9b36-5e27b186a7cc\r\n",
+        PrincipalType = PrincipalType.User
+    });
+
     // Export the resource information
     return new Dictionary<string, object?>
     {
         ["resourceGroupName"] = resourceGroup.Name,
         ["webAppName"] = webApp.Name,
         ["webAppUrl"] = webApp.DefaultHostName.Apply(hostname => $"https://{hostname}"),
+        ["roleAssignmentId"] = roleAssignment.Id
     };
 });
