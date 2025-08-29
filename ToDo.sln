@@ -16,9 +16,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{44EFC735-6B4C-46F4-9ED5-56EF53A3A7B2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{B0EF4BAA-181A-4A92-8AAB-DD381FC2CD92}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\main_helenhoratodoapp.yml = .github\workflows\main_helenhoratodoapp.yml
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
