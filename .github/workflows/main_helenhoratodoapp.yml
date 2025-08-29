@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - Add_iac
   workflow_dispatch:
 
 jobs:
