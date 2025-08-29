@@ -13,6 +13,7 @@ return await Pulumi.Deployment.RunAsync(() =>
     var resourceGroup = new ResourceGroup("ToDoHel", new ResourceGroupArgs
     {
         ResourceGroupName = "ToDoHel",
+        Location = "Poland Central"
     });
 
     // Create an App Service Plan for Windows
