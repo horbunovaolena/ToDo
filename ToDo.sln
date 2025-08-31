@@ -20,6 +20,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\main_helenatodoapp.yml = .github\workflows\main_helenatodoapp.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{43157C28-EE1F-4F65-8F14-4FFC10878182}"
+	ProjectSection(SolutionItems) = preProject
+		docs\WebApp.md = docs\WebApp.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
