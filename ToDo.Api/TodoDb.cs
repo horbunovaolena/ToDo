@@ -3,7 +3,7 @@
     using Microsoft.EntityFrameworkCore;
     using System.Text.Json;
 
-    class TodoDb : DbContext
+    public class TodoDb : DbContext
     {
         public TodoDb(DbContextOptions<TodoDb> options)
             : base(options) { }
