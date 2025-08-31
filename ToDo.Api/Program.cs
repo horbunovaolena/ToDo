@@ -13,24 +13,10 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
-
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Enable static files
 app.UseStaticFiles();
-
-// Enable CORS
-app.UseCors("AllowAll");
 
 // Enable Swagger in development
 if (app.Environment.IsDevelopment())
