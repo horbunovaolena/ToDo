@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ToDo.Api;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,15 @@ builder.Services.AddControllers();
 
 // Swagger services
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ToDo API",
+        Version = "v1",
+        Description = "A simple ToDo API built with ASP.NET Core"
+    });
+});
 
 WebApplication app = builder.Build();
 
@@ -34,4 +43,4 @@ app.MapGet("/", () => Results.Redirect("/index.html"));
 // Map controllers
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

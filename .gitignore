@@ -247,3 +247,5 @@ coveragereport
 .terraform
 .terraform.lock.hcl
 terraform.tfstate
+*.db-shm
+*.db-wal
