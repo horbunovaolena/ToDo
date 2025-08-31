@@ -8,51 +8,50 @@ using ToDo.Api;
 
 #nullable disable
 
-namespace ToDo.Api.Migrations
+namespace ToDo.Api.Migrations;
+
+[DbContext(typeof(TodoDb))]
+[Migration("20250828112815_InitialCreate")]
+partial class InitialCreate
 {
-    [DbContext(typeof(TodoDb))]
-    [Migration("20250828112815_InitialCreate")]
-    partial class InitialCreate
+    /// <inheritdoc />
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
+        modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
 
-            modelBuilder.Entity("ToDo.Api.Todo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+        modelBuilder.Entity("ToDo.Api.Todo", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDate")
-                        .HasColumnType("TEXT");
+                b.Property<DateTimeOffset>("CreatedDate")
+                    .HasColumnType("TEXT");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("TEXT");
+                b.Property<string>("Description")
+                    .HasColumnType("TEXT");
 
-                    b.Property<DateOnly?>("DueDate")
-                        .HasColumnType("TEXT");
+                b.Property<DateOnly?>("DueDate")
+                    .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsComplete")
-                        .HasColumnType("INTEGER");
+                b.Property<bool>("IsComplete")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                b.Property<string>("Name")
+                    .HasColumnType("TEXT");
 
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
+                b.Property<int>("Priority")
+                    .HasColumnType("INTEGER");
 
-                    b.Property<string>("Tags")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                b.Property<string>("Tags")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("Todos");
-                });
+                b.ToTable("Todos");
+            });
 #pragma warning restore 612, 618
-        }
     }
 }

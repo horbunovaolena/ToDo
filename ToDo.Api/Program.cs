@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ToDo.Api;
 using Microsoft.OpenApi.Models;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Change from InMemory to SQLite
 builder.Services.AddDbContext<TodoDb>(options =>
