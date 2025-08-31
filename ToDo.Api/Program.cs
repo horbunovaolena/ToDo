@@ -25,6 +25,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Controller endpoints
 // Serve index.html as default page
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
