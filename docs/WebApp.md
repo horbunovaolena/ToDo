@@ -7,7 +7,7 @@ sequenceDiagram
   participant D as Database
 
   B->>WA: 1. HTTP GET Request
-  WA->>DA: 2. Request data for the request
+  WA->>DA: 2. Request data from repository
   DA->>D: 3. Execute SQL Query
   D-->>DA: 4. Return Data (row)
   DA-->>WA: 5. Return Object
