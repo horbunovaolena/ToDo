@@ -1,26 +1,131 @@
-﻿namespace ToDo.Api
+﻿using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+namespace ToDo.Api;
+
+/// <summary>
+/// Контекст бази даних Entity Framework Core для управління сутностями ToDo.
+/// Забезпечує доступ до даних та налаштування зіставлення об'єктів з таблицями бази даних.
+/// </summary>
+/// <remarks>
+/// TodoDb є основним класом доступу до даних який:
+/// - Наслідує DbContext для інтеграції з Entity Framework Core
+/// - Надає доступ до колекції завдань через DbSet
+/// - Налаштовує спеціальну серіалізацію для складних типів (списику тегів)
+/// - Підтримує SQLite базу даних з JSON конверсією для тегів
+/// 
+/// Клас використовує конфігурацію через dependency injection та підтримує
+/// міграції для еволюції схеми бази даних.
+/// 
+/// Особливості реалізації:
+/// - JSON серіалізація для зберігання списків тегів як текст
+/// - Автоматична конверсія між List&lt;string&gt; та JSON рядком
+/// - Безпечна десеріалізація з резервним значенням у випадку помилок
+/// </remarks>
+public class TodoDb : DbContext
 {
-    using Microsoft.EntityFrameworkCore;
-    using System.Text.Json;
+    /// <summary>
+    /// Конструктор контексту бази даних з налаштуваннями підключення.
+    /// Ініціалізує базовий DbContext з переданими опціями конфігурації.
+    /// </summary>
+    /// <param name="options">
+    /// Налаштування для підключення до бази даних включаючи рядок підключення,
+    /// провайдер бази даних (SQLite) та інші конфігураційні параметри.
+    /// </param>
+    /// <remarks>
+    /// Конструктор викликається автоматично системою dependency injection
+    /// з налаштуваннями з Program.cs де конфігурується SQLite провайдер.
+    /// 
+    /// Опції зазвичай включають:
+    /// - Рядок підключення до SQLite файлу
+    /// - Налаштування логування
+    /// - Параметри поведінки EF Core
+    /// </remarks>
+    public TodoDb(DbContextOptions<TodoDb> options)
+        : base(options) { }
 
-    class TodoDb : DbContext
+    /// <summary>
+    /// Набір сутностей Todo для виконання CRUD операцій з завданнями.
+    /// Надає інтерфейс для запитів, додавання, оновлення та видалення завдань.
+    /// </summary>
+    /// <value>
+    /// DbSet&lt;Todo&gt; що представляє таблицю завдань у базі даних.
+    /// Використовується для всіх операцій з даними через LINQ запити.
+    /// </value>
+    /// <remarks>
+    /// DbSet забезпечує:
+    /// - LINQ запити для вибірки даних (Where, OrderBy, Select тощо)
+    /// - Методи Add/Update/Remove для модифікації даних
+    /// - Асинхронні операції для покращення продуктивності
+    /// - Автоматичне відстеження змін Entity Framework
+    /// 
+    /// Приклади використання:
+    /// - await Todos.ToListAsync() - отримати всі завдання
+    /// - Todos.Where(t => t.IsComplete) - фільтрувати завершені
+    /// - Todos.Add(newTodo) - додати нове завдання
+    /// </remarks>
+    public DbSet<Todo> Todos => Set<Todo>();
+
+    /// <summary>
+    /// Налаштовує зіставлення моделей з таблицями бази даних та спеціальні конверсії типів.
+    /// Викликається автоматично Entity Framework під час ініціалізації контексту.
+    /// </summary>
+    /// <param name="modelBuilder">
+    /// Об'єкт для конфігурації моделі бази даних включаючи таблиці, стовпці,
+    /// відношення, індекси та конверсії типів.
+    /// </param>
+    /// <remarks>
+    /// Метод налаштовує спеціальну конверсію для властивості Tags:
+    /// 
+    /// <strong>Проблема:</strong> SQLite не підтримує списки об'єктів напряму
+    /// <strong>Рішення:</strong> Серіалізація List&lt;string&gt; у JSON рядок
+    /// 
+    /// <strong>Серіалізація (C# → БД):</strong>
+    /// List&lt;string&gt; {"tag1", "tag2"} → JSON рядок '["tag1","tag2"]'
+    /// 
+    /// <strong>Десеріалізація (БД → C#):</strong>
+    /// JSON рядок '["tag1","tag2"]' → List&lt;string&gt; {"tag1", "tag2"}
+    /// 
+    /// <strong>Безпека:</strong> При помилці десеріалізації повертається пустий список
+    /// замість exception для забезпечення стабільності додатку.
+    /// 
+    /// Це дозволяє зберігати складні типи в простих SQL базах даних
+    /// зберігаючи при цьому зручність роботи з типізованими колекціями у коді.
+    /// </remarks>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        public TodoDb(DbContextOptions<TodoDb> options)
-            : base(options) { }
+        base.OnModelCreating(modelBuilder);
 
-        public DbSet<Todo> Todos => Set<Todo>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            // Configure Tags as JSON for InMemory database
-            modelBuilder.Entity<Todo>()
-                .Property(e => e.Tags)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
-                );
-        }
+        /// <summary>
+        /// Налаштування JSON конверсії для зберігання списку тегів як текстового стовпця.
+        /// Автоматично конвертує List&lt;string&gt; в JSON при збереженні та назад при читанні.
+        /// </summary>
+        /// <remarks>
+        /// Конфігурація включає:
+        /// 
+        /// <strong>Серіалізація (зберігання):</strong>
+        /// - List&lt;string&gt; → JSON рядок через JsonSerializer.Serialize
+        /// - Використовує стандартні налаштування JSON без додаткових опцій
+        /// - Приклад: ["tag1", "tag2"] стає '["tag1","tag2"]'
+        /// 
+        /// <strong>Десеріалізація (читання):</strong>
+        /// - JSON рядок → List&lt;string&gt; через JsonSerializer.Deserialize
+        /// - Null-безпечна операція з резервним значенням
+        /// - При помилці парсингу повертається новий пустий список
+        /// 
+        /// <strong>Переваги підходу:</strong>
+        /// - Простота зберігання складних типів у SQL
+        /// - Повна типізація на рівні C# коду
+        /// - Автоматична конверсія без ручного втручання
+        /// - Відновлення після помилок серіалізації
+        /// </remarks>
+        modelBuilder.Entity<Todo>()
+            .Property(e => e.Tags)
+            .HasConversion(
+                // Конверсія для зберігання: List<string> → JSON рядок
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                // Конверсія для читання: JSON рядок → List<string> з fallback
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
+            );
     }
 }

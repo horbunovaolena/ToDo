@@ -15,7 +15,6 @@ const filterButtons = document.querySelectorAll('.filter-btn');
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     loadTodos();
-    loadTags();
     
     // Add event listener for Enter key in input
     todoInput.addEventListener('keypress', function(e) {
@@ -38,22 +37,6 @@ async function loadTodos() {
         updateStats();
     } catch (error) {
         showError('Failed to load todos: ' + error.message);
-    }
-}
-
-async function loadTags() {
-    try {
-        const response = await fetch('/tags');
-        if (response.ok) {
-            availableTags = await response.json();
-            console.log('Loaded tags:', availableTags);
-        } else {
-            console.warn('Failed to load tags, status:', response.status);
-            availableTags = [];
-        }
-    } catch (error) {
-        console.warn('Failed to load tags:', error.message);
-        availableTags = [];
     }
 }
 
@@ -95,7 +78,6 @@ async function addTodo() {
         todoInput.value = '';
         renderTodos();
         updateStats();
-        loadTags(); // Refresh tags if new ones were added
     } catch (error) {
         showError('Failed to add todo: ' + error.message);
     }
@@ -150,7 +132,6 @@ async function deleteTodo(id) {
         todos = todos.filter(t => t.id !== id);
         renderTodos();
         updateStats();
-        loadTags(); // Refresh tags
     } catch (error) {
         showError('Failed to delete todo: ' + error.message);
     }
@@ -181,7 +162,6 @@ async function updateTodo(id, updates) {
         // Update local state
         Object.assign(todo, updates);
         renderTodos();
-        loadTags(); // Refresh tags if they were updated
     } catch (error) {
         showError('Failed to update todo: ' + error.message);
     }
@@ -454,7 +434,6 @@ async function clearCompleted() {
         todos = todos.filter(todo => !todo.isComplete);
         renderTodos();
         updateStats();
-        loadTags(); // Refresh tags
     } catch (error) {
         showError('Failed to clear completed tasks: ' + error.message);
     }

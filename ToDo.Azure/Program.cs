@@ -8,14 +8,14 @@ using WebManagedServiceIdentityArgs = Pulumi.AzureNative.Web.Inputs.ManagedServi
 return await Pulumi.Deployment.RunAsync(() =>
 {
     // Create an Azure Resource Group
-    var resourceGroup = new ResourceGroup("ToDoHel", new ResourceGroupArgs
+    ResourceGroup resourceGroup = new ResourceGroup("ToDoHel", new ResourceGroupArgs
     {
         ResourceGroupName = "ToDoHel",
         Location = "Poland Central"
     });
 
     // Create an App Service Plan for Windows
-    var appServicePlan = new AppServicePlan("ToDoAppServicePlan", new AppServicePlanArgs
+    AppServicePlan appServicePlan = new AppServicePlan("ToDoAppServicePlan", new AppServicePlanArgs
     {
         Name = "ToDoAppServicePlan",
         ResourceGroupName = resourceGroup.Name,
@@ -29,7 +29,7 @@ return await Pulumi.Deployment.RunAsync(() =>
     });
 
     // Create a Windows Web App
-    var webApp = new WebApp("helenatodoapp", new WebAppArgs
+    WebApp webApp = new WebApp("helenatodoapp", new WebAppArgs
     {
         Name = "helenatodoapp",
         ResourceGroupName = resourceGroup.Name,
@@ -66,7 +66,7 @@ return await Pulumi.Deployment.RunAsync(() =>
     });
 
     // Create role assignment for user with Contributor role
-    var roleAssignment = new RoleAssignment("contributorRoleAssignment", new RoleAssignmentArgs
+    RoleAssignment roleAssignment = new RoleAssignment("contributorRoleAssignment", new RoleAssignmentArgs
     {
         Scope = resourceGroup.Id,
         RoleDefinitionId = "/subscriptions/{subscription-id}/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c", // Contributor role

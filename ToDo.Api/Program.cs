@@ -1,108 +1,180 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ToDo.Api;
+using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
+/// <summary>
+/// Точка входу для додатку ToDo API.
+/// Цей клас налаштовує та ініціалізує веб-додаток ASP.NET Core з Entity Framework,
+/// документацією Swagger, обслуговуванням статичних файлів та API контролерами.
+/// </summary>
+/// <remarks>
+/// Додаток надає RESTful API для управління елементами ToDo з наступними функціями:
+/// - CRUD операції для елементів ToDo
+/// - Інтеграція бази даних SQLite через Entity Framework Core
+/// - Документація Swagger/OpenAPI для API кінцевих точок
+/// - Обслуговування статичних файлів для веб UI
+/// - Маршрутизація на основі контролерів для API кінцевих точок
+/// - Конфігурації специфічні для розробки (фільтри винятків бази даних, Swagger UI)
+/// </remarks>
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Change from InMemory to SQLite
+/// <summary>
+/// Налаштування Entity Framework Core з провайдером бази даних SQLite.
+/// Встановлює контекст TodoDb для використання бази даних SQLite з рядком підключення з конфігурації.
+/// </summary>
+/// <remarks>
+/// Рядок підключення отримується з appsettings.json під "ConnectionStrings:DefaultConnection".
+/// Файл бази даних SQLite буде створений, якщо він не існує.
+/// </remarks>
 builder.Services.AddDbContext<TodoDb>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+/// <summary>
+/// Додає фільтр винятків сторінки розробника бази даних для покращених сторінок помилок під час розробки.
+/// Надає детальну інформацію про винятки пов'язані з базою даних коли операції бази даних зазнають невдачі.
+/// </summary>
+/// <remarks>
+/// Цей сервіс в основному корисний під час розробки для діагностики проблем пов'язаних з Entity Framework.
+/// Він показує детальну інформацію про винятки бази даних включаючи пропозиції міграцій.
+/// </remarks>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Swagger services
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+/// <summary>
+/// Налаштування MVC контролерів з покращеними опціями серіалізації JSON.
+/// Включає маршрутизацію на основі контролерів та API кінцеві точки з покращеною обробкою JSON.
+/// </summary>
+/// <remarks>
+/// Налаштовані опції JSON:
+/// - JsonStringEnumConverter: Серіалізує енуми як рядки замість чисел
+/// - ReferenceHandler.IgnoreCycles: Запобігає проблемам циклічних посилань у графах об'єктів
+/// </remarks>
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Конвертує енуми в рядкове представлення у JSON (наприклад, "High" замість 3)
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        // Обробляє циклічні посилання у графах об'єктів
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 
+/// <summary>
+/// Налаштування API Explorer для автоматичного виявлення кінцевих точок API.
+/// Необхідно для роботи генерації документації Swagger/OpenAPI з контролерами.
+/// </summary>
+/// <remarks>
+/// Цей сервіс сканує додаток для кінцевих точок API та робить їх доступними
+/// для генерації документації Swagger.
+/// </remarks>
+builder.Services.AddEndpointsApiExplorer();
+
+/// <summary>
+/// Налаштування генерації документації Swagger/OpenAPI з користувацькими налаштуваннями.
+/// Встановлює автоматичну документацію API з правильним версіонуванням та зіставленням типів.
+/// </summary>
+/// <remarks>
+/// Конфігурація включає:
+/// - Метадані API (назва, версія, опис)
+/// - Зіставлення типу DateOnly для правильної генерації схеми OpenAPI
+/// - Підтримка nullable типів DateOnly
+/// 
+/// Згенерована документація буде доступна на кінцевій точці /swagger під час розробки.
+/// </remarks>
+builder.Services.AddSwaggerGen(c =>
+{
+    // Визначає основний документ API з метаданими
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ToDo API",
+        Version = "v1",
+        Description = "Комплексне ToDo API створене з ASP.NET Core що надає CRUD операції для управління завданнями"
+    });
+    
+    /// <summary>
+    /// Зіставляє тип DateOnly з форматом дати OpenAPI.
+    /// Необхідно тому що DateOnly є типом .NET 6+ який потребує явного зіставлення для Swagger.
+    /// </summary>
+    c.MapType<DateOnly>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date"
+    });
+    
+    /// <summary>
+    /// Зіставляє nullable тип DateOnly з форматом дати OpenAPI.
+    /// Обробляє опціональні поля дати в моделях API.
+    /// </summary>
+    c.MapType<DateOnly?>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Nullable = true
+    });
+});
+
+/// <summary>
+/// Створює налаштований екземпляр веб-додатку.
+/// Створює додаток з усіма попередньо налаштованими сервісами та middleware.
+/// </summary>
 WebApplication app = builder.Build();
 
-// Enable static files
+/// <summary>
+/// Включає middleware для обслуговування статичних файлів.
+/// Дозволяє додатку обслуговувати статичні файли (HTML, CSS, JavaScript) з директорії wwwroot.
+/// </summary>
+/// <remarks>
+/// Статичні файли обслуговуються безпосередньо без обробки та зазвичай використовуються для:
+/// - Файли веб UI (HTML, CSS, JavaScript)
+/// - Зображення, шрифти та інші ресурси
+/// - Файли клієнтського додатку
+/// </remarks>
 app.UseStaticFiles();
 
-// Enable Swagger in development
+/// <summary>
+/// Налаштування middleware Swagger тільки для середовища розробки.
+/// Включає кінцеву точку Swagger JSON та інтерактивний Swagger UI для тестування API та документації.
+/// </summary>
+/// <remarks>
+/// Конфігурація тільки для розробки включає:
+/// - Кінцева точка документа Swagger JSON: /swagger/v1/swagger.json
+/// - Інтерактивний Swagger UI: /swagger
+/// 
+/// Це middleware вимкнене у продакшені з міркувань безпеки та продуктивності.
+/// </remarks>
 if (app.Environment.IsDevelopment())
 {
+    // Включає кінцеву точку Swagger JSON
     app.UseSwagger();
+    // Включає інтерактивний Swagger UI
     app.UseSwaggerUI();
 }
 
-// Controller endpoints
-// Serve index.html as default page
+/// <summary>
+/// Налаштування кореневого маршруту для перенаправлення на основний веб-інтерфейс.
+/// Зіставляє кореневий URL додатку ("/") для перенаправлення користувачів на основну HTML сторінку.
+/// </summary>
+/// <remarks>
+/// Це надає типову цільову сторінку для користувачів що заходять на корінь додатку.
+/// Перенаправлення вказує на index.html який повинен містити основний веб UI.
+/// </remarks>
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
-// Get all unique tags
-app.MapGet("/tags", async (TodoDb db) =>
-{
-    var todos = await db.Todos.ToListAsync();
-    var allTags = todos
-        .SelectMany(t => t.Tags ?? new List<string>())
-        .Distinct()
-        .OrderBy(tag => tag)
-        .ToList();
-    return Results.Ok(allTags);
-});
+/// <summary>
+/// Включає маршрутизацію на основі контролерів.
+/// Зіставляє всі дії контролерів з їх відповідними маршрутами на основі атрибутів контролера та дії.
+/// </summary>
+/// <remarks>
+/// Це включає всі контролери в додатку для обробки HTTP запитів на основі їх конфігурації маршрутизації.
+/// Контролери використовують атрибути як [Route], [HttpGet], [HttpPost], тощо для визначення своїх кінцевих точок.
+/// </remarks>
+app.MapControllers();
 
-// Get todos by tag
-app.MapGet("/todoitems/tag/{tag}", async (string tag, TodoDb db) =>
-{
-    var normalizedTag = tag.Trim().ToLowerInvariant();
-    var todos = await db.Todos.ToListAsync();
-    var filteredTodos = todos
-        .Where(t => t.Tags != null && t.Tags.Any(todoTag => todoTag.Equals(normalizedTag, StringComparison.OrdinalIgnoreCase)))
-        .ToList();
-    return Results.Ok(filteredTodos);
-});
-
-app.MapGet("/todoitems", async (TodoDb db) =>
-    await db.Todos.ToListAsync());
-
-app.MapGet("/todoitems/complete", async (TodoDb db) =>
-{
-    var completedTodos = await db.Todos.Where(t => t.IsComplete).ToListAsync();
-    return Results.Ok(completedTodos);
-});
-
-app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
-    await db.Todos.FindAsync(id)
-        is Todo todo
-            ? Results.Ok(todo)
-            : Results.NotFound());
-
-app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
-{
-    db.Todos.Add(todo);
-    await db.SaveChangesAsync();
-
-    return Results.Created($"/todoitems/{todo.Id}", todo);
-});
-
-app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
-{
-    var todo = await db.Todos.FindAsync(id);
-
-    if (todo is null) return Results.NotFound();
-
-    todo.Name = inputTodo.Name;
-    todo.IsComplete = inputTodo.IsComplete;
-    todo.Description = inputTodo.Description;
-    todo.DueDate = inputTodo.DueDate;
-    todo.Priority = inputTodo.Priority;
-    todo.Tags = inputTodo.Tags;
-
-    await db.SaveChangesAsync();
-
-    return Results.NoContent();
-});
-
-app.MapDelete("/todoitems/{id}", async (int id, TodoDb db) =>
-{
-    if (await db.Todos.FindAsync(id) is Todo todo)
-    {
-        db.Todos.Remove(todo);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    return Results.NotFound();
-});
-
-app.Run();
+/// <summary>
+/// Запускає веб-додаток та починає прослуховування HTTP запитів.
+/// Це асинхронна операція яка запускає додаток до його завершення.
+/// </summary>
+/// <remarks>
+/// Додаток буде прослуховувати на налаштованих портах (зазвичай HTTPS та HTTP).
+/// Цей метод блокується до завершення додатку (Ctrl+C, SIGTERM, тощо).
+/// </remarks>
+await app.RunAsync();
