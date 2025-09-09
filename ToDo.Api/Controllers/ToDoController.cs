@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ToDo.Api.Controllers;
@@ -7,39 +7,107 @@ namespace ToDo.Api.Controllers;
 /// REST API контролер для управління завданнями ToDo.
 /// Надає повний набір CRUD операцій для роботи з завданнями через HTTP endpoints.
 /// </summary>
-/// <remarks>
-/// ToDoController є основним API контролером що забезпечує:
-/// 
-/// <strong>HTTP Endpoints:</strong>
-/// - GET /todoitems - отримання всіх завдань
-/// - GET /todoitems/complete - отримання завершених завдань  
-/// - GET /todoitems/{id} - отримання конкретного завдання
-/// - POST /todoitems - створення нового завдання
-/// - PUT /todoitems/{id} - оновлення існуючого завдання
-/// - DELETE /todoitems/{id} - видалення завдання
-/// 
-/// <strong>Архітектурні особливості:</strong>
-/// - Використовує Primary Constructor (C# 12+) для dependency injection
-/// - Асинхронні операції для кращої продуктивності
-/// - Правильні HTTP статус коди для різних сценаріїв
-/// - Entity Framework Core для доступу до даних
-/// - Автоматична серіалізація JSON через ASP.NET Core
-/// 
-/// <strong>Обробка помилок:</strong>
-/// - 404 Not Found для неіснуючих завдань
-/// - 201 Created для успішного створення
-/// - 204 No Content для успішного оновлення/видалення
-/// - 200 OK для успішного отримання даних
-/// 
-/// Контролер спроектований для роботи з Single Page Applications (SPA)
-/// та мобільними клієнтами через стандартний REST API.
-/// </remarks>
 [ApiController]
 [Route("todoitems")]
-public class ToDoController(TodoDb _db) : ControllerBase
+public class ToDoController(TodoDb db) : ControllerBase
 {
     /// <summary>
-    /// Отримує список всіх завдань з бази даних.
+    /// Отримує список завдань з підтримкою пагінації, сортування та фільтрації.
+    /// </summary>
+    /// <param name="pageNumber">Номер сторінки (за замовчуванням 1)</param>
+    /// <param name="pageSize">Розмір сторінки (за замовчуванням 10)</param>
+    /// <param name="sortBy">Поле для сортування (name, priority, duedate, iscomplete, createddate)</param>
+    /// <param name="sortDirection">Напрямок сортування (asc або desc)</param>
+    /// <param name="priority">Фільтр за пріоритетом</param>
+    /// <param name="isComplete">Фільтр за статусом завершення</param>
+    /// <param name="searchQuery">Пошуковий запит для назви та опису</param>
+    /// <returns>
+    /// ActionResult що містить paginated результат з метаданими.
+    /// HTTP 200 OK з об'єктом що містить data, pageNumber, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage.
+    /// </returns>
+    /// <remarks>
+    /// <strong>Приклади використання:</strong>
+    /// - GET /todoitems?pageNumber=1&pageSize=5 - пагінація
+    /// - GET /todoitems?sortBy=priority&sortDirection=desc - сортування за пріоритетом
+    /// - GET /todoitems?priority=3 - фільтрація високого пріоритету  
+    /// - GET /todoitems?searchQuery=робота - пошук завданнь
+    /// - GET /todoitems?pageNumber=2&pageSize=5&sortBy=duedate&sortDirection=asc&priority=3&searchQuery=проект - комбінація всіх параметрів
+    /// </remarks>
+    [HttpGet]
+    public async Task<ActionResult<object>> GetAllTodos(
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? sortBy = "createddate",
+        string? sortDirection = "desc",
+        Priority? priority = null,
+        bool? isComplete = null,
+        string? searchQuery = null)
+    {
+        IQueryable<Todo> query = db.Todos.AsQueryable();
+
+        // 🔍 FILTERING
+        if (priority.HasValue)
+        {
+            query = query.Where(t => t.Priority == priority.Value);
+        }
+
+        if (isComplete.HasValue)
+        {
+            query = query.Where(t => t.IsComplete == isComplete.Value);
+        }
+
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            query = query.Where(t => 
+                (t.Name != null && t.Name.Contains(searchQuery)) ||
+                (t.Description != null && t.Description.Contains(searchQuery))
+            );
+        }
+
+        // 🔄 SORTING
+        query = sortBy?.ToLower() switch
+        {
+            "name" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.Name) 
+                : query.OrderByDescending(t => t.Name),
+            "priority" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.Priority) 
+                : query.OrderByDescending(t => t.Priority),
+            "duedate" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.DueDate) 
+                : query.OrderByDescending(t => t.DueDate),
+            "iscomplete" => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.IsComplete) 
+                : query.OrderByDescending(t => t.IsComplete),
+            _ => sortDirection?.ToLower() == "asc" 
+                ? query.OrderBy(t => t.CreatedDate) 
+                : query.OrderByDescending(t => t.CreatedDate)
+        };
+
+        // Get total count before pagination
+        int totalCount = await query.CountAsync();
+
+        // 📄 PAGINATION
+        List<Todo> todos = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Return paginated result with metadata
+        return Ok(new
+        {
+            Data = todos,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+            HasNextPage = pageNumber < (int)Math.Ceiling((double)totalCount / pageSize),
+            HasPreviousPage = pageNumber > 1
+        });
+    }
+
+    /// <summary>
+    /// Отримує всі завдання без пагінації (для backward compatibility).
     /// Повертає повну колекцію завдань без фільтрації.
     /// </summary>
     /// <returns>
@@ -47,43 +115,13 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// HTTP 200 OK з масивом об'єктів Todo або порожній масив якщо завдань немає.
     /// </returns>
     /// <remarks>
-    /// <strong>HTTP Method:</strong> GET
-    /// <strong>Route:</strong> /todoitems
-    /// <strong>Response:</strong> 200 OK + JSON масив
-    /// 
-    /// <strong>Особливості реалізації:</strong>
-    /// - Використовує ToListAsync() для асинхронного завантаження
-    /// - Завантажує ВСІ завдання в пам'ять (розгляньте пагінацію для великих наборів)
-    /// - JSON серіалізація включає всі властивості Todo
-    /// - Теги автоматично десеріалізуються з JSON стовпця БД
-    /// 
-    /// <strong>Приклад відповіді:</strong>
-    /// <code>
-    /// HTTP 200 OK
-    /// [
-    ///   {
-    ///     "id": 1,
-    ///     "name": "Купити молоко",
-    ///     "isComplete": false,
-    ///     "description": "В найближчому магазині",
-    ///     "createdDate": "2024-01-15T10:30:00Z",
-    ///     "dueDate": "2024-01-16",
-    ///     "priority": "Medium",
-    ///     "tags": ["shopping", "personal"]
-    ///   }
-    /// ]
-    /// </code>
-    /// 
-    /// <strong>Клієнтське використання:</strong>
-    /// - Відображення списку всіх завдань
-    /// - Ініціалізація додатку з поточними даними
-    /// - Основа для клієнтської фільтрації та сортування
+    /// <strong>Backward Compatibility:</strong>
+    /// Цей endpoint зберігає сумісність зі старим кодом який очікує всі записи без пагінації.
     /// </remarks>
-    [HttpGet]
-    public async Task<ActionResult<List<Todo>>> GetAllTodos()
+    [HttpGet("all")]
+    public async Task<ActionResult<List<Todo>>> GetAllTodosWithoutPagination()
     {
-        List<Todo> todos = await _db.Todos.ToListAsync();
-        
+        List<Todo> todos = await db.Todos.ToListAsync();
         return Ok(todos);
     }
 
@@ -96,44 +134,16 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// HTTP 200 OK з масивом завершених Todo або порожній масив.
     /// </returns>
     /// <remarks>
-    /// <strong>HTTP Method:</strong> GET
-    /// <strong>Route:</strong> /todoitems/complete
-    /// <strong>Response:</strong> 200 OK + JSON масив
-    /// 
-    /// <strong>Фільтрація на рівні БД:</strong>
-    /// Використовує Where() клаузулу що транслюється в SQL WHERE,
-    /// тому фільтрація виконується на рівні бази даних для оптимальної продуктивності.
-    /// 
-    /// <strong>SQL запит (приблизно):</strong>
-    /// <code>
-    /// SELECT * FROM Todos WHERE IsComplete = 1
-    /// </code>
-    /// 
     /// <strong>Застосування:</strong>
     /// - Відображення архіву завершених завдань
     /// - Статистика виконаних робіт
     /// - Очищення завершених завдань
     /// - Аналіз продуктивності користувача
-    /// 
-    /// <strong>Приклад використання клієнтом:</strong>
-    /// <code>
-    /// fetch('/todoitems/complete')
-    ///   .then(response => response.json())
-    ///   .then(completedTodos => {
-    ///     displayCompletedTasks(completedTodos);
-    ///   });
-    /// </code>
-    /// 
-    /// <strong>Оптимізація:</strong>
-    /// Для великих обсягів даних розгляньте додавання:
-    /// - Пагінації (skip/take параметри)
-    /// - Обмеження за датою (останні N днів)
-    /// - Індексу на IsComplete стовпець
     /// </remarks>
     [HttpGet("complete")]
     public async Task<ActionResult<List<Todo>>> GetCompleteTodos()
     {
-        List<Todo> completedTodos = await _db.Todos
+        List<Todo> completedTodos = await db.Todos
             .Where(t => t.IsComplete)
             .ToListAsync();
 
@@ -148,60 +158,10 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// <returns>
     /// ActionResult що містить знайдене завдання або HTTP 404 якщо не знайдено.
     /// </returns>
-    /// <remarks>
-    /// <strong>HTTP Method:</strong> GET
-    /// <strong>Route:</strong> /todoitems/{id}
-    /// <strong>Response:</strong> 200 OK + JSON об'єкт ИЛИ 404 Not Found
-    /// 
-    /// <strong>Параметри маршруту:</strong>
-    /// - {id} автоматично прив'язується до параметра int id методу
-    /// - ASP.NET Core автоматично валідує що id є числом
-    /// - Неправильний формат id поверне 400 Bad Request автоматично
-    /// 
-    /// <strong>Логіка пошуку:</strong>
-    /// 1. FindAsync(id) - оптимізований пошук за первинним ключем
-    /// 2. Перевірка на null (завдання не існує)
-    /// 3. Повернення відповідного HTTP статусу
-    /// 
-    /// <strong>Приклади відповідей:</strong>
-    /// 
-    /// <em>Успішний пошук:</em>
-    /// <code>
-    /// GET /todoitems/1
-    /// HTTP 200 OK
-    /// {
-    ///   "id": 1,
-    ///   "name": "Завершити проект",
-    ///   "isComplete": false,
-    ///   ...
-    /// }
-    /// </code>
-    /// 
-    /// <em>Завдання не знайдено:</em>
-    /// <code>
-    /// GET /todoitems/999
-    /// HTTP 404 Not Found
-    /// {
-    ///   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-    ///   "title": "Not Found",
-    ///   "status": 404
-    /// }
-    /// </code>
-    /// 
-    /// <strong>Використання клієнтом:</strong>
-    /// - Відображення деталей завдання
-    /// - Редагування конкретного завдання
-    /// - Перевірка існування завдання
-    /// - Deep linking до конкретних завдань
-    /// 
-    /// <strong>Оптимізація:</strong>
-    /// FindAsync() використовує кеш Entity Framework для покращення продуктивності
-    /// при повторних запитах того ж завдання.
-    /// </remarks>
     [HttpGet("{id}")]
     public async Task<ActionResult<Todo>> GetTodo(int id)
     {
-        Todo? todo = await _db.Todos.FindAsync(id);
+        Todo? todo = await db.Todos.FindAsync(id);
         if (todo == null)
         {
             return NotFound();
@@ -225,19 +185,6 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// <strong>Request Body:</strong> JSON об'єкт Todo
     /// <strong>Response:</strong> 201 Created + JSON об'єкт + Location header
     /// 
-    /// <strong>Процес створення:</strong>
-    /// 1. Model binding - автоматичне перетворення JSON в об'єкт Todo
-    /// 2. Add() - додавання до контексту EF (ще не в БД)
-    /// 3. SaveChangesAsync() - збереження в базу даних
-    /// 4. Автоматичне присвоєння ID новому завданню
-    /// 5. Повернення Created response з Location header
-    /// 
-    /// <strong>Автоматичні значення:</strong>
-    /// - Id: Генерується базою даних (IDENTITY/AUTOINCREMENT)
-    /// - CreatedDate: Встановлюється в конструкторі Todo
-    /// - Priority: За замовчуванням Medium якщо не вказано
-    /// - Tags: Порожній список якщо не вказано
-    /// 
     /// <strong>Приклад запиту:</strong>
     /// <code>
     /// POST /todoitems
@@ -251,40 +198,13 @@ public class ToDoController(TodoDb _db) : ControllerBase
     ///   "tags": ["навчання", "технології"]
     /// }
     /// </code>
-    /// 
-    /// <strong>Приклад відповіді:</strong>
-    /// <code>
-    /// HTTP 201 Created
-    /// Location: /api/todoitems/5
-    /// 
-    /// {
-    ///   "id": 5,
-    ///   "name": "Вивчити ASP.NET Core", 
-    ///   "description": "Пройти офіційний туторіал",
-    ///   "isComplete": false,
-    ///   "createdDate": "2024-01-15T14:30:00Z",
-    ///   "priority": "High",
-    ///   "dueDate": "2024-02-01",
-    ///   "tags": ["навчання", "технології"]
-    /// }
-    /// </code>
-    /// 
-    /// <strong>Валідація:</strong>
-    /// - ASP.NET Core автоматично валідує JSON структуру
-    /// - Model validation attributes можна додати до Todo класу
-    /// - Неправильний JSON поверне 400 Bad Request
-    /// 
-    /// <strong>Ідемпотентність:</strong>
-    /// POST НЕ є ідемпотентним - кожен виклик створить нове завдання.
     /// </remarks>
     [HttpPost]
     public async Task<ActionResult<Todo>> CreateTodo(Todo todo)
     {
-        _db.Todos.Add(todo);
-        
-        await _db.SaveChangesAsync();
-        
-        return Created($"/api/todoitems/{todo.Id}", todo);
+        db.Todos.Add(todo);
+        await db.SaveChangesAsync();
+        return Created($"/todoitems/{todo.Id}", todo);
     }
 
     /// <summary>
@@ -296,80 +216,10 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// <returns>
     /// HTTP 204 No Content при успішному оновленні або 404 Not Found якщо завдання не існує.
     /// </returns>
-    /// <remarks>
-    /// <strong>HTTP Method:</strong> PUT
-    /// <strong>Route:</strong> /todoitems/{id}
-    /// <strong>Request Body:</strong> JSON об'єкт Todo
-    /// <strong>Response:</strong> 204 No Content ИЛИ 404 Not Found
-    /// 
-    /// <strong>Семантика PUT:</strong>
-    /// PUT виконує ПОВНУ заміну ресурсу - всі оновлювані поля встановлюються з inputTodo.
-    /// Для часткового оновлення розгляньте PATCH метод.
-    /// 
-    /// <strong>Процес оновлення:</strong>
-    /// 1. Пошук існуючого завдання за ID
-    /// 2. Перевірка існування (404 якщо не знайдено)
-    /// 3. Оновлення всіх модифікуючих полів
-    /// 4. Збереження змін в базу даних
-    /// 5. Повернення 204 No Content (стандарт для PUT)
-    /// 
-    /// <strong>Поля що оновлюються:</strong>
-    /// - Name - назва завдання
-    /// - IsComplete - статус завершення
-    /// - Description - опис завдання  
-    /// - DueDate - термін виконання
-    /// - Priority - пріоритет завдання
-    /// - Tags - список тегів
-    /// 
-    /// <strong>Поля що НЕ оновлюються:</strong>
-    /// - Id - незмінний ідентифікатор
-    /// - CreatedDate - дата створення зберігається
-    /// 
-    /// <strong>Приклад запиту:</strong>
-    /// <code>
-    /// PUT /todoitems/1
-    /// Content-Type: application/json
-    /// 
-    /// {
-    ///   "name": "Оновлена назва завдання",
-    ///   "isComplete": true,
-    ///   "description": "Нові деталі завдання",
-    ///   "priority": "Low",
-    ///   "dueDate": null,
-    ///   "tags": ["оновлено"]
-    /// }
-    /// </code>
-    /// 
-    /// <strong>Приклади відповідей:</strong>
-    /// 
-    /// <em>Успішне оновлення:</em>
-    /// <code>
-    /// HTTP 204 No Content
-    /// (порожнє тіло відповіді)
-    /// </code>
-    /// 
-    /// <em>Завдання не знайдено:</em>
-    /// <code>
-    /// HTTP 404 Not Found
-    /// {
-    ///   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-    ///   "title": "Not Found", 
-    ///   "status": 404
-    /// }
-    /// </code>
-    /// 
-    /// <strong>Change Tracking:</strong>
-    /// Entity Framework автоматично відстежує зміни і генерує SQL UPDATE
-    /// тільки для полів що реально змінились.
-    /// 
-    /// <strong>Транзакційність:</strong>
-    /// SaveChangesAsync() виконується в транзакції - або всі зміни зберігаються,
-    /// або жодна (atomic operation).
-    /// </remarks>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTodo(int id, Todo inputTodo)
     {
-        Todo? todo = await _db.Todos.FindAsync(id);
+        Todo? todo = await db.Todos.FindAsync(id);
 
         if (todo is null)
         {
@@ -383,7 +233,7 @@ public class ToDoController(TodoDb _db) : ControllerBase
         todo.Priority = inputTodo.Priority;
         todo.Tags = inputTodo.Tags;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         return NoContent();
     }
@@ -396,87 +246,17 @@ public class ToDoController(TodoDb _db) : ControllerBase
     /// <returns>
     /// HTTP 204 No Content при успішному видаленні або 404 Not Found якщо завдання не існує.
     /// </returns>
-    /// <remarks>
-    /// <strong>HTTP Method:</strong> DELETE
-    /// <strong>Route:</strong> /todoitems/{id}
-    /// <strong>Response:</strong> 204 No Content ИЛИ 404 Not Found
-    /// 
-    /// <strong>Семантика DELETE:</strong>
-    /// DELETE є ідемпотентним - повторні виклики з тим же ID будуть повертати 404
-    /// після першого успішного видалення.
-    /// 
-    /// <strong>Процес видалення:</strong>
-    /// 1. Пошук завдання за ID в базі даних
-    /// 2. Перевірка існування (404 якщо не знайдено)
-    /// 3. Позначення для видалення в EF контексті
-    /// 4. Збереження змін (фактичне видалення з БД)
-    /// 5. Повернення 204 No Content
-    /// 
-    /// <strong>Безпека операції:</strong>
-    /// - Операція незворотна - видалені дані не можна відновити
-    /// - Рекомендується додати підтвердження на клієнті
-    /// - Для аудиту розгляньте "soft delete" (IsDeleted flag)
-    /// 
-    /// <strong>Приклади запитів та відповідей:</strong>
-    /// 
-    /// <em>Успішне видалення:</em>
-    /// <code>
-    /// DELETE /todoitems/1
-    /// HTTP 204 No Content
-    /// (порожнє тіло відповіді)
-    /// </code>
-    /// 
-    /// <em>Завдання не існує:</em>
-    /// <code>
-    /// DELETE /todoitems/999  
-    /// HTTP 404 Not Found
-    /// {
-    ///   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-    ///   "title": "Not Found",
-    ///   "status": 404
-    /// }
-    /// </code>
-    /// 
-    /// <em>Повторне видалення:</em>
-    /// <code>
-    /// DELETE /todoitems/1 (уже видалено)
-    /// HTTP 404 Not Found
-    /// (ідемпотентна поведінка)
-    /// </code>
-    /// 
-    /// <strong>Клієнтське використання:</strong>
-    /// <code>
-    /// // JavaScript приклад з підтвердженням
-    /// if (confirm('Видалити це завдання назавжди?')) {
-    ///   fetch(`/todoitems/${todoId}`, { method: 'DELETE' })
-    ///     .then(response => {
-    ///       if (response.status === 204) {
-    ///         removeFromUI(todoId);
-    ///       }
-    ///     });
-    /// }
-    /// </code>
-    /// 
-    /// <strong>Альтернативні підходи:</strong>
-    /// - Soft Delete: додати IsDeleted поле замість фізичного видалення
-    /// - Archive: перемістити в архівну таблицю перед видаленням
-    /// - Cascade Delete: автоматичне видалення пов'язаних даних
-    /// 
-    /// <strong>Транзакційність:</strong>
-    /// Видалення виконується в транзакції через SaveChangesAsync(),
-    /// що гарантує консистентність даних.
-    /// </remarks>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTodo(int id)
     {
-        Todo? todo = await _db.Todos.FindAsync(id);
+        Todo? todo = await db.Todos.FindAsync(id);
         if (todo == null)
         {
             return NotFound();
         }
 
-        _db.Todos.Remove(todo);
-        await _db.SaveChangesAsync();
+        db.Todos.Remove(todo);
+        await db.SaveChangesAsync();
         return NoContent();
     }
 }
