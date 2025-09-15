@@ -1,3 +1,4 @@
+using System.Collections;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,23 +37,13 @@ public class ToDoController(TodoDb db) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Todo>>> GetPaginatedToDos(string query = "", int pageNumber = 1, int pageSize = 10)
     {
-   
         List<Todo> allTodos = await db.Todos.ToListAsync();
 
         // 🔍 FILTERING in `allTodos`
-        //if умова
-        //код виконується якщо умова істинна
-
-        List<Todo> filteredTodos = new List<Todo>();
-
-        foreach (Todo todo in allTodos)
-        {
-            if (todo.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)
+        List<Todo> filteredTodos = allTodos
+                .Where(todo => todo.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)
                 || todo.Description.Contains(query, StringComparison.InvariantCultureIgnoreCase))
-            {
-                filteredTodos.Add(todo);
-            }
-        }
+                .ToList();
 
 
         // 📄 PAGINATION
