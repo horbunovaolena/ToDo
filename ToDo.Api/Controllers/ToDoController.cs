@@ -34,76 +34,72 @@ public class ToDoController(TodoDb db) : ControllerBase
     /// - GET /todoitems?pageNumber=2&pageSize=5&sortBy=duedate&sortDirection=asc&priority=3&searchQuery=проект - комбінація всіх параметрів
     /// </remarks>
     [HttpGet]
-    public async Task<ActionResult<object>> GetAllTodos(
-        int pageNumber = 1,
-        int pageSize = 10,
-        string? sortBy = "createddate",
-        string? sortDirection = "desc",
-        Priority? priority = null,
-        bool? isComplete = null,
-        string? searchQuery = null)
+    public async Task<ActionResult<List<Todo>>> GetPaginatedToDos(int pageNumber = 1, int pageSize = 10)
     {
-        IQueryable<Todo> query = db.Todos.AsQueryable();
-
-        // 🔍 FILTERING
-        if (priority.HasValue)
-        {
-            query = query.Where(t => t.Priority == priority.Value);
-        }
-
-        if (isComplete.HasValue)
-        {
-            query = query.Where(t => t.IsComplete == isComplete.Value);
-        }
-
-        if (!string.IsNullOrEmpty(searchQuery))
-        {
-            query = query.Where(t => 
-                (t.Name != null && t.Name.Contains(searchQuery)) ||
-                (t.Description != null && t.Description.Contains(searchQuery))
-            );
-        }
-
-        // 🔄 SORTING
-        query = sortBy?.ToLower() switch
-        {
-            "name" => sortDirection?.ToLower() == "asc" 
-                ? query.OrderBy(t => t.Name) 
-                : query.OrderByDescending(t => t.Name),
-            "priority" => sortDirection?.ToLower() == "asc" 
-                ? query.OrderBy(t => t.Priority) 
-                : query.OrderByDescending(t => t.Priority),
-            "duedate" => sortDirection?.ToLower() == "asc" 
-                ? query.OrderBy(t => t.DueDate) 
-                : query.OrderByDescending(t => t.DueDate),
-            "iscomplete" => sortDirection?.ToLower() == "asc" 
-                ? query.OrderBy(t => t.IsComplete) 
-                : query.OrderByDescending(t => t.IsComplete),
-            _ => sortDirection?.ToLower() == "asc" 
-                ? query.OrderBy(t => t.CreatedDate) 
-                : query.OrderByDescending(t => t.CreatedDate)
-        };
-
-        // Get total count before pagination
-        int totalCount = await query.CountAsync();
-
         // 📄 PAGINATION
-        List<Todo> todos = await query
+        // | pageNumber | pageSize | result
+        // | 1          | 10       | пропустити 0 і вернути {pageSize} записів
+        // | 2          | 10       | пропустити {pageSize} і вернути {pageSize}
+        // | 3          | 10       | пропустити 2 * {pageSize} і вернути {pageSize}
+        // | 4          | 10       | пропустити 3 * {pageSize} і вернути {pageSize}
+
+        List<Todo> paginatedTodos = await db.Todos
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        // Return paginated result with metadata
-        return Ok(new
-        {
-            Data = todos,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
-            HasNextPage = pageNumber < (int)Math.Ceiling((double)totalCount / pageSize),
-            HasPreviousPage = pageNumber > 1
-        });
+
+
+        return Ok(paginatedTodos);
+
+
+
+
+
+
+        //.AsQueryable();
+
+        // 🔍 FILTERING
+        //if (priority.HasValue)
+        //{
+        //    query = query.Where(t => t.Priority == priority.Value);
+        //}
+
+        //if (isComplete.HasValue)
+        //{
+        //    query = query.Where(t => t.IsComplete == isComplete.Value);
+        //}
+
+        //if (!string.IsNullOrEmpty(searchQuery))
+        //{
+        //    query = query.Where(t => 
+        //        (t.Name != null && t.Name.Contains(searchQuery)) ||
+        //        (t.Description != null && t.Description.Contains(searchQuery))
+        //    );
+        //}
+
+        // 🔄 SORTING
+        //query = sortBy?.ToLower() switch
+        //{
+        //    "name" => sortDirection?.ToLower() == "asc" 
+        //        ? query.OrderBy(t => t.Name) 
+        //        : query.OrderByDescending(t => t.Name),
+        //    "priority" => sortDirection?.ToLower() == "asc" 
+        //        ? query.OrderBy(t => t.Priority) 
+        //        : query.OrderByDescending(t => t.Priority),
+        //    "duedate" => sortDirection?.ToLower() == "asc" 
+        //        ? query.OrderBy(t => t.DueDate) 
+        //        : query.OrderByDescending(t => t.DueDate),
+        //    "iscomplete" => sortDirection?.ToLower() == "asc" 
+        //        ? query.OrderBy(t => t.IsComplete) 
+        //        : query.OrderByDescending(t => t.IsComplete),
+        //    _ => sortDirection?.ToLower() == "asc" 
+        //        ? query.OrderBy(t => t.CreatedDate) 
+        //        : query.OrderByDescending(t => t.CreatedDate)
+        //};
+
+        // Get total count before pagination
+        //int totalCount = await query.CountAsync();
     }
 
     /// <summary>
